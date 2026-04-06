@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>郑州市热门中小学导航</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        button.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        .card-content {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        .card-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        .card-desc {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .consult-btn {
+            width: 100%;
+            background-color: #27ae60;
+            color: white;
+            font-weight: bold;
+            margin-top: auto;
+            border-radius: 0;
+            padding: 15px 0;
+        }
+        .consult-btn:hover {
+            background-color: #219a52;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+        }
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            background-color: #eee;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #ccc;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>郑州市热门中小学择校指南</h1>
+</header>
+
+<div class="nav-container" id="type-nav">
+    <button class="active" onclick="switchType('初中')">初中</button>
+    <button onclick="switchType('小学')">小学</button>
+</div>
+
+<div class="nav-container" id="district-nav">
+    </div>
+
+<div class="container">
+    <div class="grid" id="school-grid">
+        </div>
+</div>
+
+<div class="modal-overlay" id="consult-modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 id="modal-school-name">学校名称</h2>
+        <p>扫描下方二维码添加招生顾问微信，或拨打咨询热线获取最新招生简章。</p>
+        <div class="qr-placeholder">微信二维码占位</div>
+        <p>咨询热线: <strong>0371-XXXX-XXXX</strong></p>
+    </div>
+</div>
+
+<script>
+    const schoolData = {
+        "初中": {
+            "中原区": ["郑州市外国语", "桐柏一中", "73中", "莲湖外国语", "西流湖外国语", "19中", "80中", "65中"],
+            "二七区": ["四中", "四中南", "东分", "57中", "82中"],
+            "金水区": ["省实验", "8中", "7中", "47中", "二实验"],
+            "惠济区": ["四中迎宾", "四中附属", "四中实验", "惠济区外国语"],
+            "郑东新区": ["东区外国语", "96中", "春华", "文苑", "54中"],
+            "管城区": ["管外", "管回"],
+            "经开区": ["经开区外国语"]
+        },
+        "小学": {
+            "中原区": ["伊河路总校", "互助路总校", "淮河路小学", "建二小", "伏牛路总校", "市实验小学", "锦艺小学", "郑上路小学"],
+            "金水区": ["文一", "省实验小学", "纬五路二小", "纬五路一小", "农科路小学", "文化绿城"],
+            "惠济区": ["东风路小学", "惠济实验小学", "新城路小学", "四中实验小学"],
+            "郑东新区": ["东外小", "春华小学", "聚源路总校", "蒲公英小学", "昆丽河小学", "康平路小学"],
+            "二七区": ["陇西小学", "汝河路小学", "政通路小学", "幸福路小学", "长江东路小学", "春晖小学"],
+            "经开区": ["经外小", "朝凤路小学", "六一小学", "蝶湖小学", "滨河小学"],
+            "管城区": ["管外小", "创新街小学", "牧业经济学院附小(牧哥)", "东关小学", "工二村小学"]
+        }
+    };
+
+    let currentType = '初中';
+    let currentDistrict = '中原区';
+
+    function init() {
+        renderDistrictNav();
+        renderSchools();
+    }
+
+    function switchType(type) {
+        currentType = type;
+        const districts = Object.keys(schoolData[currentType]);
+        currentDistrict = districts[0]; // 切换类型时默认选中第一个区
+        
+        // 更新类型按钮样式
+        document.querySelectorAll('#type-nav button').forEach(btn => {
+            btn.className = btn.innerText === type ? 'active' : '';
+        });
+        
+        renderDistrictNav();
+        renderSchools();
+    }
+
+    function switchDistrict(district) {
+        currentDistrict = district;
+        
+        // 更新区县按钮样式
+        document.querySelectorAll('#district-nav button').forEach(btn => {
+            btn.className = btn.innerText === district ? 'active' : '';
+        });
+        
+        renderSchools();
+    }
+
+    function renderDistrictNav() {
+        const districtNav = document.getElementById('district-nav');
+        districtNav.innerHTML = '';
+        const districts = Object.keys(schoolData[currentType]);
+        
+        districts.forEach(district => {
+            const btn = document.createElement('button');
+            btn.innerText = district;
+            if (district === currentDistrict) btn.className = 'active';
+            btn.onclick = () => switchDistrict(district);
+            districtNav.appendChild(btn);
+        });
+    }
+
+    function renderSchools() {
+        const grid = document.getElementById('school-grid');
+        grid.innerHTML = '';
+        const schools = schoolData[currentType][currentDistrict];
+        
+        schools.forEach((school, index) => {
+            // 使用 Picsum 生成随机占位图，加入 index 确保每次渲染图片不同
+            const imgUrl = `https://picsum.photos/seed/${school}/400/300`;
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <img src="${imgUrl}" alt="${school}图片" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title">${school}</div>
+                    <div class="card-desc">位于郑州市${currentDistrict}的优质${currentType}。学校注重学生全面发展，师资力量雄厚，教学设施完善，是区域内备受家长关注的热门学校之一。</div>
+                </div>
+                <button class="consult-btn" onclick="openModal('${school}')">📝 在线咨询 / 获取资料</button>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // 弹窗逻辑
+    const modal = document.getElementById('consult-modal');
+    function openModal(schoolName) {
+        document.getElementById('modal-school-name').innerText = schoolName + " - 招生咨询";
+        modal.style.display = 'flex';
+    }
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+    // 点击弹窗外部关闭
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // 初始化运行
+    init();
+</script>
+
+</body>
+</html>
